@@ -4,8 +4,8 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import com.strava.entity.Challenge;
-import com.strava.entity.ObjectiveType;
-import com.strava.entity.SportType;
+import com.strava.entity.enumeration.ObjectiveType;
+import com.strava.entity.enumeration.SportType;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

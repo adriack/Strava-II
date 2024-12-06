@@ -3,31 +3,52 @@ package com.strava.entity;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.UUID;
-import javax.persistence.*;
+
 import com.strava.dto.TrainingSessionDTO;
+import com.strava.entity.enumeration.SportType;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 
 @Entity  // Marca esta clase como una entidad persistente
+@Table(name = "sessions")
 public class TrainingSession {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)  // Generación automática del ID
     private UUID id;
 
-    @Column(nullable = false)  // El campo 'title' es obligatorio
+    @Column(nullable = false)
     private String title;
 
     @Enumerated(EnumType.STRING)  // Para almacenar los valores de SportType como cadenas
     private SportType sport;
 
+    @Column(nullable = false)
     private Double distance;
 
-    @Column(nullable = false)  // El campo 'startDate' es obligatorio
+    @Column(nullable = false)
     private LocalDate startDate;
 
-    @Column(nullable = false)  // El campo 'startTime' es obligatorio
+    @Column(nullable = false)
     private LocalTime startTime;
 
+    @Column(nullable = false)
     private Double duration;
+
+    // Relación ManyToOne: Una sesión pertenece a un solo usuario
+    @ManyToOne(fetch = FetchType.LAZY)  // Usamos LAZY loading para evitar cargar los usuarios innecesariamente
+    @JoinColumn(name = "user_id", nullable = false)  // La columna que guarda la relación con el usuario
+    private User user;
 
     // Constructor vacío para JPA
     public TrainingSession() {}
@@ -64,4 +85,7 @@ public class TrainingSession {
 
     public Double getDuration() { return duration; }
     public void setDuration(Double duration) { this.duration = duration; }
+
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
 }

@@ -3,7 +3,7 @@ package com.strava.facade;
 import com.strava.dto.ChallengeDTO;
 import com.strava.dto.ChallengeFilterDTO;
 import com.strava.dto.TokenDTO;
-import com.strava.entity.SportType;
+import com.strava.entity.enumeration.SportType;
 import com.strava.service.ChallengeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

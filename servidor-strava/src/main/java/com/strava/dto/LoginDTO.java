@@ -1,8 +1,8 @@
 package com.strava.dto;
 
-import com.strava.entity.AuthProvider;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.strava.entity.enumeration.AuthProvider;
 
 public class LoginDTO {
     private String email;

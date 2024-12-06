@@ -6,18 +6,51 @@ import java.util.List;
 import java.util.UUID;
 
 import com.strava.dto.ChallengeDTO;
+import com.strava.entity.enumeration.ObjectiveType;
+import com.strava.entity.enumeration.SportType;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "challenges")  // La tabla en la base de datos se llamará 'challenges'
 public class Challenge {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
+
+    @Column(nullable = false)
     private String name;
+
+    @Column(nullable = false)
     private LocalDate startDate;
+
+    @Column(nullable = false)
     private LocalDate endDate;
+
+    @Column(nullable = false)
     private Double objectiveValue;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private ObjectiveType objectiveType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private SportType sport;
 
-    private List<UUID> userIds = new ArrayList<>();
+    @ManyToMany(mappedBy = "challenges")  // Relación bidireccional con User
+    private List<User> users = new ArrayList<>();  // Listado de usuarios que participan en el reto
 
+    // Constructor utilizando ChallengeDTO
     public Challenge(ChallengeDTO challengeDTO) {
         this.id = challengeDTO.getId();
         this.name = challengeDTO.getName();
@@ -27,7 +60,7 @@ public class Challenge {
         this.objectiveType = challengeDTO.getObjectiveType();
         this.sport = challengeDTO.getSport();
     }
-    
+
     // Getters y Setters
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -50,16 +83,23 @@ public class Challenge {
     public SportType getSport() { return sport; }
     public void setSport(SportType sport) { this.sport = sport; }
 
-    // Métodos para acceder y modificar userIds
-    public List<UUID> getUserIds() { return new ArrayList<>(userIds); }
-    
-    public void addUserId(UUID userId) { 
-        if (userId != null && !userIds.contains(userId)) {
-            userIds.add(userId); 
+    // Métodos para los usuarios
+
+    public List<User> getUsers() { return new ArrayList<>(users); }
+    public void setUsers(List<User> users) { this.users = users; }
+
+    public void addUser(User user) {
+        if (user != null && !users.contains(user)) {
+            users.add(user);
+            user.addChallenge(this);  // Aseguramos que la relación sea bidireccional
         }
     }
-    
-    public void removeUserId(UUID userId) { userIds.remove(userId); }
+
+    public void removeUser(User user) {
+        if (user != null && users.contains(user)) {
+            users.remove(user);  // Eliminar el usuario de la lista de usuarios del desafío
+            user.removeChallenge(this);  // Aseguramos que la relación sea eliminada en el otro lado también
+        }
+    }
+
 }
-
-

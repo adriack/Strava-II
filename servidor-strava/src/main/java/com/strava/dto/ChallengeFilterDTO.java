@@ -1,7 +1,8 @@
 package com.strava.dto;
 
-import com.strava.entity.SportType;
 import java.time.LocalDate;
+
+import com.strava.entity.enumeration.SportType;
 
 public class ChallengeFilterDTO {
     private LocalDate date = LocalDate.now();

@@ -1,49 +1,82 @@
 package com.strava.entity;
 
-import javax.persistence.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import com.strava.dto.UserDTO;
+import com.strava.entity.enumeration.AuthProvider;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "users") // La tabla en la base de datos se llamará 'users'
 public class User {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
-    
+
     @Column(nullable = false, unique = true)
     private String email;
-    
+
     @Column(nullable = false)
     private String password;
-    
+
     @Column(nullable = false)
     private String name;
-    
+
     @Column(nullable = false)
     private LocalDate dateOfBirth;
-    
-    private Double weight; // Opcional
-    
-    private Double height; // Opcional
-    
-    private Integer maxHeartRate; // Opcional
-    
-    private Integer restingHeartRate; // Opcional
-    
+
+    @Column(nullable = true)
+    private Double weight;
+
+    @Column(nullable = true)
+    private Double height;
+
+    @Column(nullable = true)
+    private Integer maxHeartRate;
+
+    @Column(nullable = true)
+    private Integer restingHeartRate;
+
     @Enumerated(EnumType.STRING)
     private AuthProvider authProvider;
 
-    @ElementCollection
-    private List<UUID> sessionIds = new ArrayList<>();
-    
-    @ElementCollection
-    private List<UUID> challengeIds = new ArrayList<>();
+    // Relación Uno a Varios con TrainingSession
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TrainingSession> sessions = new ArrayList<>();
+
+    // Relación Varios a Varios con Challenge
+    @ManyToMany
+    @JoinTable(
+        name = "user_challenges",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "challenge_id")
+    )
+    private List<Challenge> challenges = new ArrayList<>();
+
+    // Relación Uno a Varios con UserToken
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserToken> tokens = new ArrayList<>();
+
+    public User() {
+        // Constructor vacío requerido por JPA
+    }
 
     public User(UserDTO userDTO) {
         this.id = userDTO.getId();
@@ -89,26 +122,61 @@ public class User {
     public AuthProvider getAuthProvider() { return authProvider; }
     public void setAuthProvider(AuthProvider authProvider) { this.authProvider = authProvider; }
 
-    // Métodos para acceder y modificar sessionIds
-    public List<UUID> getSessionIds() { return new ArrayList<>(sessionIds); }
+    // Métodos de conveniencia para sesiones
+    public List<TrainingSession> getSessions() { return sessions; }
+    public void setSessions(List<TrainingSession> sessions) { this.sessions = sessions; }
 
-    public void addSessionId(UUID sessionId) {
-        if (sessionId != null && !sessionIds.contains(sessionId)) {
-            sessionIds.add(sessionId);
+    public void addSession(TrainingSession session) {
+        if (session != null && !sessions.contains(session)) {
+            sessions.add(session);
+            session.setUser(this);
         }
     }
 
-    public void removeSessionId(UUID sessionId) { sessionIds.remove(sessionId); }
-
-    // Métodos para acceder y modificar challengeIds
-    public List<UUID> getChallengeIds() { return new ArrayList<>(challengeIds); }
-
-    public void addChallengeId(UUID challengeId) {
-        if (challengeId != null && !challengeIds.contains(challengeId)) {
-            challengeIds.add(challengeId);
+    public void removeSession(TrainingSession session) {
+        if (session != null && sessions.contains(session)) {
+            sessions.remove(session);
+            session.setUser(null);
         }
     }
 
-    public void removeChallengeId(UUID challengeId) { challengeIds.remove(challengeId); }
+    // Métodos de conveniencia para retos
+    public List<Challenge> getChallenges() { return challenges; }
+    public void setChallenges(List<Challenge> challenges) { this.challenges = challenges; }
+
+    public void addChallenge(Challenge challenge) {
+        if (challenge != null && !challenges.contains(challenge)) {
+            challenges.add(challenge);
+        }
+    }
+
+    public void removeChallenge(Challenge challenge) {
+        if (challenge != null && challenges.contains(challenge)) {
+            challenges.remove(challenge);
+        }
+    }
+
+    // Métodos de conveniencia para tokens
+    public List<UserToken> getTokens() { return tokens; }
+    public void setTokens(List<UserToken> tokens) { this.tokens = tokens; }
+
+    public void addToken(UserToken token) {
+        if (token != null && !tokens.contains(token)) {
+            tokens.add(token);
+            token.setUser(this);
+        }
+    }
+
+    public void removeToken(UserToken token) {
+        if (token != null && tokens.contains(token)) {
+            tokens.remove(token);
+            token.setUser(null);
+        }
+    }
+
+    public void revokeToken(UserToken token) {
+        if (token != null && tokens.contains(token)) {
+            token.setRevoked(true);
+        }
+    }
 }
-

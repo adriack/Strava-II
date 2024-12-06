@@ -1,4 +1,4 @@
-package com.strava.entity;
+package com.strava.entity.enumeration;
 
 public enum AuthProvider {
     GOOGLE,
