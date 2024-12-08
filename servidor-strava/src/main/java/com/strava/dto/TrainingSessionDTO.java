@@ -4,10 +4,10 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.UUID;
 
-import com.strava.entity.enumeration.SportType;
-import com.strava.entity.TrainingSession;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.strava.entity.TrainingSession;
+import com.strava.entity.enumeration.SportType;
 
 public class TrainingSessionDTO {
     private UUID id;

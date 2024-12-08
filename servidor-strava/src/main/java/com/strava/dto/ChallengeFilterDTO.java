@@ -5,17 +5,26 @@ import java.time.LocalDate;
 import com.strava.entity.enumeration.SportType;
 
 public class ChallengeFilterDTO {
-    private LocalDate date = LocalDate.now();
+    private LocalDate startDate = null;
+    private LocalDate endDate = null;
     private SportType sport = null;
-    private Integer limit = 5;
+    private Integer limit = null;
 
     // Getters y Setters
-    public LocalDate getDate() {
-        return date;
+    public LocalDate getStartDate() {
+        return startDate;
     }
 
-    public void setDate(LocalDate date) {
-        this.date = date;
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
     }
 
     public SportType getSport() {

@@ -1,20 +1,28 @@
 package com.strava.facade;
 
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.strava.dto.SessionFilterDTO;
 import com.strava.dto.TokenDTO;
 import com.strava.dto.TrainingSessionDTO;
 import com.strava.service.TrainingSessionService;
-import java.time.LocalDate;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/sessions")
@@ -71,13 +79,13 @@ public class TrainingSessionController {
         try {
             filterDTO.setStartDate(startDate != null ? LocalDate.parse(startDate) : null);
             filterDTO.setEndDate(endDate != null ? LocalDate.parse(endDate) : null);
+            filterDTO.setLimit(limit);
         } catch (Exception e) {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("error", "Invalid date format.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
-        filterDTO.setLimit(limit != null ? limit : 5);  // Valor por defecto de 5 sesiones si no se pasa un límite
-
+        
         // Crear un TokenDTO para validación
         TokenDTO tokenDTO = new TokenDTO(token);
 

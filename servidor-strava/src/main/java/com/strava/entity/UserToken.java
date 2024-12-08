@@ -28,6 +28,13 @@ public class UserToken {
     @Column(nullable = false)
     private Boolean revoked = false;  // Para saber si el token ha sido revocado
 
+    // Constructor para crear un UserToken con un token y un usuario
+    public UserToken(User user, String token) {
+        this.user = user;
+        this.token = token;
+        this.revoked = false; // Por defecto, el token no está revocado
+    }
+
     // Getters y Setters
     public UUID getId() {
         return id;

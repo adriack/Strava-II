@@ -13,6 +13,11 @@ import com.strava.entity.UserToken;
 @Repository
 public interface TokenDAO extends JpaRepository<UserToken, UUID> {
 
+    // Busca un token específico, solo si no está revocado
+    @Query("SELECT ut FROM UserToken ut WHERE ut.token = :token AND ut.revoked = false")
+    Optional<UserToken> findByToken(String token);
+
+    // Busca el usuario asociado a un token no revocado
     @Query("SELECT ut.user FROM UserToken ut WHERE ut.token = :token AND ut.revoked = false")
     Optional<User> findUserByToken(String token);
 

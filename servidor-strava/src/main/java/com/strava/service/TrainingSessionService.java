@@ -1,29 +1,29 @@
 package com.strava.service;
 
-import com.strava.dto.SessionFilterDTO;
-import com.strava.dto.TrainingSessionDTO;
-import com.strava.dto.TokenDTO;
-import com.strava.entity.TrainingSession;
-import com.strava.entity.User;
-
-import java.util.HashMap;
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
+import com.strava.dao.TrainingSessionDAO;
+import com.strava.dto.SessionFilterDTO;
+import com.strava.dto.TokenDTO;
+import com.strava.dto.TrainingSessionDTO;
+import com.strava.entity.TrainingSession;
+import com.strava.entity.User;
 
 @Service
 public class TrainingSessionService {
 
-    // Almacén para sesiones de entrenamiento
-    private Map<UUID, TrainingSession> sessionDatabase = new HashMap<>();
-
-    // Referencia al UserService para acceder a los usuarios y al tokenDatabase
+    private final TrainingSessionDAO trainingSessionDAO;
     private final UserService userService;
 
-    public TrainingSessionService(UserService userService) {
+    public TrainingSessionService(TrainingSessionDAO trainingSessionDAO, UserService userService) {
+        this.trainingSessionDAO = trainingSessionDAO;
         this.userService = userService;
     }
 
@@ -32,66 +32,48 @@ public class TrainingSessionService {
         // Validar token y obtener el usuario
         User user = userService.getUserFromToken(tokenDTO);
 
-        if (user == null) {
-            throw new IllegalArgumentException("Invalid token.");
-        }
-
-        // Crear un nuevo ID para la sesión
-        UUID sessionId = UUID.randomUUID();
-        sessionDTO.setId(sessionId);
-
         // Crear el objeto TrainingSession a partir del DTO
         TrainingSession session = new TrainingSession(sessionDTO);
+        session.setUser(user);
 
-        // Guardar la sesión en el HashMap
-        sessionDatabase.put(sessionId, session);
+        // Guardar la sesión en la base de datos
+        trainingSessionDAO.save(session);
 
-        // Asociar el ID de la sesión al usuario
-        user.addSessionId(sessionId);
-
-        return "Training session created successfully with ID: " + sessionId;
+        return "Training session created successfully with ID: " + session.getId();
     }
 
+    // Obtener sesiones de entrenamiento de un usuario, con filtrado
     public List<TrainingSessionDTO> getUserSessions(TokenDTO tokenDTO, SessionFilterDTO filterDTO) {
         // Validar token y obtener el usuario
         User user = userService.getUserFromToken(tokenDTO);
 
-        if (user == null) {
-            throw new IllegalArgumentException("Invalid token.");
+        // Obtener rango de fechas para el filtrado
+        LocalDate startDate = filterDTO.getStartDate();
+        LocalDate endDate = filterDTO.getEndDate();
+
+        // Establecer valores predeterminados si son null
+        if (filterDTO.getLimit() == null) {
+            filterDTO.setLimit(5);  // Establecer límite por defecto a 5
         }
 
-        // Obtener los IDs de las sesiones asociadas al usuario
-        List<UUID> userSessionIds = user.getSessionIds();
+        if (endDate == null) {
+            filterDTO.setEndDate(LocalDate.now());  // Establecer fecha de fin por defecto a la fecha actual
+        }
+        
+        // Comprobar que la fecha de fin sea posterior o igual a la fecha de inicio
+        if (startDate != null && filterDTO.getEndDate().isBefore(startDate)) {
+            throw new IllegalArgumentException("End date cannot be before the start date.");
+        }
 
-        // Filtrar las sesiones de entrenamiento que están asociadas a los SessionIds del usuario
-        List<TrainingSession> sessions = sessionDatabase.values().stream()
-            .filter(session -> userSessionIds.contains(session.getId()))  // Filtramos por las sesiones del usuario
-            .collect(Collectors.toList());
+        // Convertir la información de filtro a parámetros compatibles con la consulta
+        Pageable pageable = PageRequest.of(0, filterDTO.getLimit());  // Usamos limit en la paginación
 
-        // Filtrar por fechas (si se proporcionan)
-        if (filterDTO.getStartDate() != null) {
-            sessions = sessions.stream()
-                .filter(session -> session.getStartDate().isAfter(filterDTO.getStartDate()) || session.getStartDate().isEqual(filterDTO.getStartDate()))
+        // Consultar las sesiones filtradas desde la base de datos
+        Page<TrainingSession> sessionsPage = trainingSessionDAO.findFilteredSessions(user.getId(), startDate, endDate, pageable);
+
+        // Convertir las sesiones a DTOs y devolver el resultado
+        return sessionsPage.getContent().stream()
+                .map(session -> new TrainingSessionDTO(session))
                 .collect(Collectors.toList());
-        }
-
-        if (filterDTO.getEndDate() != null) {
-            sessions = sessions.stream()
-                .filter(session -> session.getStartDate().isBefore(filterDTO.getEndDate()) || session.getStartDate().isEqual(filterDTO.getEndDate()))
-                .collect(Collectors.toList());
-        }
-
-        // Limitar la cantidad de resultados según el parámetro `limit`
-        Integer limit = filterDTO.getLimit();
-        if (sessions.size() > limit) {
-            sessions = sessions.subList(0, limit);  // Tomamos solo los primeros `limit` elementos
-        }
-
-        // Convertir las sesiones de entrenamiento a DTOs
-        List<TrainingSessionDTO> sessionDTOs = sessions.stream()
-            .map(session -> new TrainingSessionDTO(session))
-            .collect(Collectors.toList());
-
-        return sessionDTOs;
     }
 }

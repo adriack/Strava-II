@@ -1,107 +1,102 @@
 package com.strava.service;
 
-import com.strava.entity.User;
-import com.strava.entity.AuthProvider;
-import com.strava.dto.UserDTO;
-import com.strava.dto.TokenDTO;
-import com.strava.dto.LoginDTO;
+import java.util.Optional;
+import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import com.strava.dao.TokenDAO;
+import com.strava.dao.UserDAO;
+import com.strava.dto.LoginDTO;
+import com.strava.dto.TokenDTO;
+import com.strava.dto.UserDTO;
+import com.strava.entity.User;
+import com.strava.entity.UserToken;
 
 @Service
 public class UserService {
 
-    // Mapa para almacenar los usuarios con su UUID
-    private Map<UUID, User> userDatabase = new HashMap<>();
-    // Mapa para almacenar los tokens válidos asociados a los UUID de los usuarios
-    private Map<String, UUID> tokenDatabase = new HashMap<>();
+    @Autowired
+    private UserDAO userDAO;
 
-    // Método para registrar un nuevo usuario
+    @Autowired
+    private TokenDAO tokenDAO;
+
+    // Registrar un nuevo usuario
     public String registerUser(UserDTO userDTO) {
-        // Comprobar si ya existe un usuario con el mismo email
-        if (findUserByEmail(userDTO.getEmail()) != null) {
+        // Verificar si ya existe un usuario con el mismo correo
+        if (userDAO.findByEmail(userDTO.getEmail()).isPresent()) {
             throw new IllegalArgumentException("This email already exists.");
         }
 
-        // Generar un UUID único para el nuevo usuario
-        UUID userId = UUID.randomUUID();
-        userDTO.setId(userId);
-        
-        // Crear un nuevo objeto User a partir del DTO
+        // Crear un nuevo usuario
         User user = new User(userDTO);
-        
-        // Guardar el usuario en la base de datos (HashMap)
-        userDatabase.put(userId, user);
-        
-        return "User registered successfully with ID: " + userId;
+        user.setId(UUID.randomUUID());
+
+        // Guardar el usuario en la base de datos
+        userDAO.save(user);
+
+        return "User registered successfully with ID: " + user.getId();
     }
 
+    // Iniciar sesión de usuario
     public String loginUser(LoginDTO loginDTO) {
         String email = loginDTO.getEmail();
         String password = loginDTO.getPassword();
-        AuthProvider authProvider = loginDTO.getAuthProvider();
-        
-        // Verificar las credenciales del usuario
-        User user = findUserByEmail(email);
-        if (user == null || !user.getPassword().equals(password) || !user.getAuthProvider().equals(authProvider)) {
+
+        // Buscar al usuario por su email
+        Optional<User> optionalUser = userDAO.findByEmail(email);
+
+        if (optionalUser.isEmpty()) {
             throw new IllegalArgumentException("Invalid credentials.");
         }
-        
-        // Generar un token para el usuario
+
+        User user = optionalUser.get();
+
+        // Validar las credenciales
+        if (!user.getPassword().equals(password)) {
+            throw new IllegalArgumentException("Invalid credentials.");
+        }
+
+        // Generar y guardar el token
         String token = generateToken();
-        
-        // Guardar el token en la base de datos
-        tokenDatabase.put(token, user.getId());
-        
+        UserToken userToken = new UserToken(user, token);
+        tokenDAO.save(userToken);
+
         return token;
     }
 
+    // Cerrar sesión de usuario
     public String logoutUser(TokenDTO tokenDTO) {
         String token = tokenDTO.getToken();
-        
-        // Verificar si el token existe y eliminarlo
-        UUID userId = tokenDatabase.remove(token);
-        
-        if (userId == null) {
+
+        // Buscar el token en la base de datos
+        Optional<UserToken> optionalToken = tokenDAO.findByToken(token);
+
+        if (optionalToken.isEmpty()) {
             throw new IllegalArgumentException("Invalid token.");
         }
 
+        // Invalidar el token
+        UserToken userToken = optionalToken.get();
+        userToken.setRevoked(true);
+        tokenDAO.save(userToken);
+
         return "User logged out successfully.";
-    }
-
-    // Método para generar un token único basado en el timestamp actual
-    private String generateToken() {
-        long timestamp = System.currentTimeMillis();
-        return String.valueOf(timestamp); // Usamos el timestamp como token único
-    }
-
-    // Método auxiliar para buscar un usuario por su correo
-    private User findUserByEmail(String email) {
-        for (User user : userDatabase.values()) {
-            if (user.getEmail().equals(email)) {
-                return user;
-            }
-        }
-        return null; // Si no se encuentra el usuario
     }
 
     // Validar el token y obtener el usuario asociado
     public User getUserFromToken(TokenDTO tokenDTO) {
         String token = tokenDTO.getToken();
-        
-        // Verificar si el token existe en el tokenDatabase
-        UUID userId = tokenDatabase.get(token);
-        
-        if (userId == null) {
-            // Si el token no es válido o no existe
-            return null;
-        }
-        
-        // Si el token es válido, devolver el objeto User correspondiente
-        return userDatabase.get(userId);
+    
+        // Buscar al usuario asociado al token no revocado directamente desde el DAO
+        return tokenDAO.findUserByToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid or revoked token."));
+    }    
+
+    // Método para generar un token único basado en UUID
+    private String generateToken() {
+        return UUID.randomUUID().toString();
     }
 }

@@ -5,7 +5,7 @@ import java.time.LocalDate;
 public class SessionFilterDTO {
     private LocalDate startDate = null;
     private LocalDate endDate = null;
-    private Integer limit = 5;
+    private Integer limit = null;
 
     // Getters y Setters
     public LocalDate getStartDate() {
