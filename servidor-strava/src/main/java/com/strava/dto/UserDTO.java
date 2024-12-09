@@ -10,7 +10,6 @@ import com.strava.entity.enumeration.AuthProvider;
 public class UserDTO {
     private UUID id;
     private String email;
-    private String password;
     private String name;
     private LocalDate dateOfBirth;
     private Double weight;
@@ -22,16 +21,12 @@ public class UserDTO {
     @JsonCreator
     public UserDTO(
             @JsonProperty("email") String email,
-            @JsonProperty("password") String password,
             @JsonProperty("name") String name,
             @JsonProperty("dateOfBirth") LocalDate dateOfBirth,
             @JsonProperty("authProvider") AuthProvider authProvider) {
 
         if (email == null || email.isEmpty()) {
             throw new IllegalArgumentException("Email is required.");
-        }
-        if (password == null || password.isEmpty()) {
-            throw new IllegalArgumentException("Password is required.");
         }
         if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException("Name is required.");
@@ -44,7 +39,6 @@ public class UserDTO {
         }
 
         this.email = email;
-        this.password = password;
         this.name = name;
         this.dateOfBirth = dateOfBirth;
         this.authProvider = authProvider;
@@ -56,9 +50,6 @@ public class UserDTO {
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
-
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }

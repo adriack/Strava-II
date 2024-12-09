@@ -1,7 +1,6 @@
 package com.strava.service;
 
 import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,6 +12,8 @@ import com.strava.dto.TokenDTO;
 import com.strava.dto.UserDTO;
 import com.strava.entity.User;
 import com.strava.entity.UserToken;
+import com.strava.external.AuthGateway;
+import com.strava.external.FactoriaGateway;
 
 @Service
 public class UserService {
@@ -23,6 +24,12 @@ public class UserService {
     @Autowired
     private TokenDAO tokenDAO;
 
+    private final FactoriaGateway factoriaGateway;
+
+    public UserService() {
+        this.factoriaGateway = new FactoriaGateway();
+    }
+
     // Registrar un nuevo usuario
     public String registerUser(UserDTO userDTO) {
         // Verificar si ya existe un usuario con el mismo correo
@@ -30,9 +37,17 @@ public class UserService {
             throw new IllegalArgumentException("This email already exists.");
         }
 
+        // Usar la factoría para obtener el gateway adecuado
+        AuthGateway authGateway = factoriaGateway.createGateway(userDTO.getAuthProvider().toString());
+
+        // Validar el email con el proveedor correspondiente
+        boolean emailValid = authGateway.validateEmail(userDTO.getEmail()).orElse(false);
+        if (!emailValid) {
+            throw new IllegalArgumentException("Email is not registered with the specified provider.");
+        }
+
         // Crear un nuevo usuario
         User user = new User(userDTO);
-        user.setId(UUID.randomUUID());
 
         // Guardar el usuario en la base de datos
         userDAO.save(user);
@@ -44,20 +59,25 @@ public class UserService {
     public String loginUser(LoginDTO loginDTO) {
         String email = loginDTO.getEmail();
         String password = loginDTO.getPassword();
+        String authProvider = loginDTO.getAuthProvider().toString();
+
+        // Usar la factoría para obtener el gateway adecuado
+        AuthGateway authGateway = factoriaGateway.createGateway(authProvider);
+
+        // Validar las credenciales con el proveedor correspondiente
+        boolean credentialsValid = authGateway.validatePassword(email, password).orElse(false);
+        if (!credentialsValid) {
+            throw new IllegalArgumentException("Invalid credentials.");
+        }
 
         // Buscar al usuario por su email
         Optional<User> optionalUser = userDAO.findByEmail(email);
 
         if (optionalUser.isEmpty()) {
-            throw new IllegalArgumentException("Invalid credentials.");
+            throw new IllegalArgumentException("User must be registered first.");
         }
 
         User user = optionalUser.get();
-
-        // Validar las credenciales
-        if (!user.getPassword().equals(password)) {
-            throw new IllegalArgumentException("Invalid credentials.");
-        }
 
         // Generar y guardar el token
         String token = generateToken();
@@ -95,8 +115,9 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid or revoked token."));
     }    
 
-    // Método para generar un token único basado en UUID
+    // Método para generar un token único basado en el timestamp actual
     private String generateToken() {
-        return UUID.randomUUID().toString();
+        return String.valueOf(System.currentTimeMillis());
     }
+
 }
