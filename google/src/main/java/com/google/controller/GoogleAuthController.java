@@ -3,73 +3,73 @@ package com.google.controller;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.google.dao.GoogleUserRepository;
-import com.google.entity.GoogleUser;
+import com.google.dto.LoginDTO;
+import com.google.service.GoogleAuthService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 @RestController
 @RequestMapping("/api/google")
 public class GoogleAuthController {
 
-    private final GoogleUserRepository userRepository;
+    private final GoogleAuthService googleAuthService;
 
-    public GoogleAuthController(GoogleUserRepository userRepository) {
-        this.userRepository = userRepository;
+    public GoogleAuthController(GoogleAuthService googleAuthService) {
+        this.googleAuthService = googleAuthService;
     }
 
+    @Operation(summary = "Verify if an email is registered")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Email verification result",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Map.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input",
+                    content = @Content)
+    })
     @GetMapping("/verify-email")
     public ResponseEntity<Map<String, Boolean>> verifyEmail(@RequestParam String email) {
-        boolean registered = userRepository.findByEmail(email).isPresent();
+        boolean registered = googleAuthService.verifyEmail(email);
         Map<String, Boolean> response = new HashMap<>();
         response.put("registered", registered);
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "Validate email and password")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Credentials are valid",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Map.class))),
+            @ApiResponse(responseCode = "401", description = "Invalid email or password",
+                    content = @Content)
+    })
     @PostMapping("/validate")
-    public ResponseEntity<?> validateEmailAndPassword(@RequestBody Map<String, String> body) {
-        String email = body.get("email");
-        String password = body.get("password");
-
-        Optional<GoogleUser> user = userRepository.findByEmail(email);
-        if (user.isPresent() && user.get().getPassword().equals(password)) {
-            return ResponseEntity.ok(Collections.singletonMap("valid", true));
-        }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                             .body(Collections.singletonMap("error", "Invalid email or password"));
+    public ResponseEntity<?> validateEmailAndPassword(@RequestBody LoginDTO loginDTO) {
+        return googleAuthService.validateEmailAndPassword(loginDTO);
     }
 
+    @Operation(summary = "Register a new user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "User registered successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Map.class))),
+            @ApiResponse(responseCode = "400", description = "Email already registered",
+                    content = @Content)
+    })
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody Map<String, String> body) {
-        String email = body.get("email");
-        String password = body.get("password");
-
-        // Verifica si ya existe un usuario con el mismo correo
-        Optional<GoogleUser> existingUser = userRepository.findByEmail(email);
-        if (existingUser.isPresent()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                 .body(Collections.singletonMap("error", "Email already registered"));
-        }
-
-        // Si no existe, crear un nuevo usuario
-        GoogleUser newUser = new GoogleUser();
-        newUser.setEmail(email);
-        newUser.setPassword(password);
-
-        // Guardar el usuario en la base de datos
-        userRepository.save(newUser);
-
-        // Responder con un mensaje de éxito
-        return ResponseEntity.status(HttpStatus.CREATED)
-                             .body(Collections.singletonMap("message", "User registered successfully"));
+    public ResponseEntity<?> registerUser(@RequestBody LoginDTO loginDTO) {
+        return googleAuthService.registerUser(loginDTO);
     }
 }
