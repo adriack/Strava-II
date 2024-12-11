@@ -9,6 +9,9 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class MetaAuthGateway implements AuthGateway {
     private static final String HOST = "localhost";
     private static final int PORT = 8082;

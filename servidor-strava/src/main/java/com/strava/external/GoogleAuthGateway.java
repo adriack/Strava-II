@@ -10,6 +10,9 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class GoogleAuthGateway implements AuthGateway {
 
     private static final String GOOGLE_API_BASE_URL = "http://localhost:8081/api/google";

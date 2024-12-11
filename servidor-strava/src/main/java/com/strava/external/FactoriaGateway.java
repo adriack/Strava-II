@@ -1,5 +1,8 @@
 package com.strava.external;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class FactoriaGateway {
 
     public AuthGateway createGateway(String provider) {
@@ -9,5 +12,4 @@ public class FactoriaGateway {
             default -> throw new IllegalArgumentException("Unsupported provider: " + provider);
         };
     }
-    
 }
