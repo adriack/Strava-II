@@ -31,6 +31,7 @@ public class UserController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "201", description = "User registered successfully."),
         @ApiResponse(responseCode = "400", description = "Invalid user data or email already exists."),
+        @ApiResponse(responseCode = "401", description = "Invalid credentials."),
         @ApiResponse(responseCode = "500", description = "Unexpected error during registration.")
     })
     @PostMapping("/register")
@@ -38,7 +39,10 @@ public class UserController {
         var response = userService.registerUser(user);
         return switch (response.getStatusCode()) {
             case 201 -> ResponseEntity.status(HttpStatus.CREATED).body(response.getMessage());
+            case 401 -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response.getMessage());
             case 400 -> ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response.getMessage());
+            case 500 -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(response.getMessage() != null ? response.getMessage() : "Unexpected error during registration.");
             default -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error during registration.");
         };
     }
@@ -65,6 +69,8 @@ public class UserController {
             }
             case 401 -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response.getMessage());
             case 400 -> ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response.getMessage());
+            case 500 -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(response.getMessage() != null ? response.getMessage() : "Unexpected error during login.");
             default -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error during login.");
         };
     }

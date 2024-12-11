@@ -39,12 +39,20 @@ public class UserService {
 
         AuthGateway authGateway = factoriaGateway.createGateway(userDTO.getAuthProvider().toString());
 
-        boolean emailValid = authGateway.validateEmail(userDTO.getEmail()).orElse(false);
+        Optional<Boolean> emailValidOptional = authGateway.validateEmail(userDTO.getEmail());
+        if (emailValidOptional.isEmpty()) {
+            return new ResponseWrapper<>(500, "Error communicating with authentication provider for email validation.", null);
+        }
+        boolean emailValid = emailValidOptional.get();
         if (!emailValid) {
             return new ResponseWrapper<>(400, "Email is not registered with the specified provider.", null);
         }
 
-        boolean passwordValid = authGateway.validatePassword(userDTO.getEmail(), userDTO.getPassword()).orElse(false);
+        Optional<Boolean> passwordValidOptional = authGateway.validatePassword(userDTO.getEmail(), userDTO.getPassword());
+        if (passwordValidOptional.isEmpty()) {
+            return new ResponseWrapper<>(500, "Error communicating with authentication provider for password validation.", null);
+        }
+        boolean passwordValid = passwordValidOptional.get();
         if (!passwordValid) {
             return new ResponseWrapper<>(401, "Invalid credentials.", null);
         }
@@ -63,7 +71,11 @@ public class UserService {
 
         AuthGateway authGateway = factoriaGateway.createGateway(authProvider);
 
-        boolean credentialsValid = authGateway.validatePassword(email, password).orElse(false);
+        Optional<Boolean> credentialsValidOptional = authGateway.validatePassword(email, password);
+        if (credentialsValidOptional.isEmpty()) {
+            return new ResponseWrapper<>(500, "Error communicating with authentication provider for password validation.", null);
+        }
+        boolean credentialsValid = credentialsValidOptional.get();
         if (!credentialsValid) {
             return new ResponseWrapper<>(401, "Invalid credentials.", null);
         }
