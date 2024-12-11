@@ -76,7 +76,6 @@ public class User {
     }
 
     public User(UserDTO userDTO) {
-        this.id = userDTO.getId();
         this.email = userDTO.getEmail();
         this.name = userDTO.getName();
         this.dateOfBirth = userDTO.getDateOfBirth();

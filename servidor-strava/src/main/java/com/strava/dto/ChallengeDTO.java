@@ -1,22 +1,46 @@
 package com.strava.dto;
 
 import java.time.LocalDate;
-import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.strava.entity.Challenge;
 import com.strava.entity.enumeration.ObjectiveType;
 import com.strava.entity.enumeration.SportType;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Positive;
 
 public class ChallengeDTO {
-    private UUID id;
+
+    @NotBlank(message = "Name is required.")
     private String name;
+
+    @NotNull(message = "Start date is required.")
+    @PastOrPresent(message = "Start date cannot be in the future.")
     private LocalDate startDate;
+
+    @NotNull(message = "End date is required.")
     private LocalDate endDate;
+
+    @NotNull(message = "Objective value must be provided.")
+    @Positive(message = "Objective value must be greater than zero.")
     private Double objectiveValue;
+
+    @NotNull(message = "Objective type is required.")
     private ObjectiveType objectiveType;
+
+    @NotNull(message = "Sport type is required.")
     private SportType sport;
+
+    // Validación personalizada para comprobar que endDate es posterior o igual a startDate
+    @AssertTrue(message = "End date must be greater than or equal to start date.")
+    public boolean isEndDateAfterStartDate() {
+        return endDate == null || startDate == null || !endDate.isBefore(startDate);
+    }
 
     @JsonCreator
     public ChallengeDTO(
@@ -27,25 +51,6 @@ public class ChallengeDTO {
             @JsonProperty("objectiveType") ObjectiveType objectiveType,
             @JsonProperty("sport") SportType sport) {
 
-        if (name == null || name.isEmpty()) {
-            throw new IllegalArgumentException("Name is required.");
-        }
-        if (startDate == null) {
-            throw new IllegalArgumentException("Start date is required.");
-        }
-        if (endDate == null) {
-            throw new IllegalArgumentException("End date is required.");
-        }
-        if (objectiveValue == null || objectiveValue <= 0) {
-            throw new IllegalArgumentException("Objective value must be greater than zero.");
-        }
-        if (objectiveType == null) {
-            throw new IllegalArgumentException("Objective type is required.");
-        }
-        if (sport == null) {
-            throw new IllegalArgumentException("Sport type is required.");
-        }
-
         this.name = name;
         this.startDate = startDate;
         this.endDate = endDate;
@@ -55,7 +60,6 @@ public class ChallengeDTO {
     }
 
     public ChallengeDTO(Challenge challenge) {
-        this.id = challenge.getId();
         this.name = challenge.getName();
         this.startDate = challenge.getStartDate();
         this.endDate = challenge.getEndDate();
@@ -65,9 +69,6 @@ public class ChallengeDTO {
     }
 
     // Getters y Setters
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 

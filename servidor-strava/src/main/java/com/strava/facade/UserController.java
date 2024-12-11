@@ -12,6 +12,7 @@ import java.util.Map;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/users")
@@ -23,62 +24,68 @@ public class UserController {
         this.userService = userService;
     }
 
-    @Operation(summary = "Register a new user", description = "This endpoint allows the creation of a new user in the system.")
+    @Operation(
+        summary = "Register a new user",
+        description = "Creates a new user in the system. Validates email and credentials with the selected provider."
+    )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "User registered successfully"),
-        @ApiResponse(responseCode = "400", description = "Bad Request - Invalid user data")
+        @ApiResponse(responseCode = "201", description = "User registered successfully."),
+        @ApiResponse(responseCode = "400", description = "Invalid user data or email already exists."),
+        @ApiResponse(responseCode = "500", description = "Unexpected error during registration.")
     })
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody UserDTO user) {
-        String message = userService.registerUser(user);
-        return ResponseEntity.ok(message);
+    public ResponseEntity<?> registerUser(@RequestBody @Valid UserDTO user) {
+        var response = userService.registerUser(user);
+        return switch (response.getStatusCode()) {
+            case 201 -> ResponseEntity.status(HttpStatus.CREATED).body(response.getMessage());
+            case 400 -> ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response.getMessage());
+            default -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error during registration.");
+        };
     }
 
-    @Operation(summary = "Login user", description = "Logs the user in and generates a JWT token.")
+    @Operation(
+        summary = "Login user",
+        description = "Authenticates a user and generates a JWT token. Validates credentials with the selected provider."
+    )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "User logged in successfully"),
-        @ApiResponse(responseCode = "401", description = "Invalid credentials")
+        @ApiResponse(responseCode = "200", description = "User logged in successfully."),
+        @ApiResponse(responseCode = "401", description = "Invalid credentials."),
+        @ApiResponse(responseCode = "400", description = "User must be registered first."),
+        @ApiResponse(responseCode = "500", description = "Unexpected error during login.")
     })
     @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@RequestBody LoginDTO login) {
-        try {
-            String token = userService.loginUser(login);
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "User logged in successfully.");
-            response.put("token", token);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
-        }
+    public ResponseEntity<?> loginUser(@RequestBody @Valid LoginDTO login) {
+        var response = userService.loginUser(login);
+        return switch (response.getStatusCode()) {
+            case 200 -> {
+                Map<String, String> responseMap = new HashMap<>();
+                responseMap.put("message", response.getMessage());
+                responseMap.put("token", (String) response.getData());
+                yield ResponseEntity.ok(responseMap);
+            }
+            case 401 -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response.getMessage());
+            case 400 -> ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response.getMessage());
+            default -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error during login.");
+        };
     }
 
-    @Operation(summary = "Logout user", description = "Logs out the user and invalidates their token.")
+    @Operation(
+        summary = "Logout user",
+        description = "Logs out a user and invalidates their JWT token."
+    )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "User logged out successfully"),
-        @ApiResponse(responseCode = "401", description = "Invalid token")
+        @ApiResponse(responseCode = "200", description = "User logged out successfully."),
+        @ApiResponse(responseCode = "400", description = "Invalid token."),
+        @ApiResponse(responseCode = "500", description = "Unexpected error during logout.")
     })
     @PostMapping("/logout")
-    public ResponseEntity<?> logoutUser(@RequestBody TokenDTO token) {
-        try {
-            String message = userService.logoutUser(token);
-            return ResponseEntity.ok(message);
-        } catch (IllegalArgumentException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
-        }
+    public ResponseEntity<?> logoutUser(@RequestBody @Valid TokenDTO token) {
+        var response = userService.logoutUser(token);
+        return switch (response.getStatusCode()) {
+            case 200 -> ResponseEntity.ok(response.getMessage());
+            case 400 -> ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response.getMessage());
+            default -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error during logout.");
+        };
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException e) {
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", e.getMessage());
-        if (e.getMessage().equals("Invalid credentials.") || e.getMessage().equals("Invalid token.")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
-        }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-    }
 }
-

@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.strava.dao.TrainingSessionDAO;
+import com.strava.dto.ResponseWrapper;
 import com.strava.dto.SessionFilterDTO;
 import com.strava.dto.TokenDTO;
 import com.strava.dto.TrainingSessionDTO;
@@ -28,9 +29,14 @@ public class TrainingSessionService {
     }
 
     // Crear una nueva sesión de entrenamiento
-    public String createSession(TokenDTO tokenDTO, TrainingSessionDTO sessionDTO) {
+    public ResponseWrapper<String> createSession(TokenDTO tokenDTO, TrainingSessionDTO sessionDTO) {
         // Validar token y obtener el usuario
-        User user = userService.getUserFromToken(tokenDTO);
+        User user;
+        try {
+            user = userService.getUserFromToken(tokenDTO);
+        } catch (IllegalArgumentException e) {
+            return new ResponseWrapper<>(401, "Invalid token", null);
+        }
 
         // Crear el objeto TrainingSession a partir del DTO
         TrainingSession session = new TrainingSession(sessionDTO);
@@ -39,13 +45,19 @@ public class TrainingSessionService {
         // Guardar la sesión en la base de datos
         trainingSessionDAO.save(session);
 
-        return "Training session created successfully with ID: " + session.getId();
+        return new ResponseWrapper<>(200, "Training session created successfully with ID: " + session.getId(), null);
+
     }
 
     // Obtener sesiones de entrenamiento de un usuario, con filtrado
-    public List<TrainingSessionDTO> getUserSessions(TokenDTO tokenDTO, SessionFilterDTO filterDTO) {
+    public ResponseWrapper<List<TrainingSessionDTO>> getUserSessions(TokenDTO tokenDTO, SessionFilterDTO filterDTO) {
         // Validar token y obtener el usuario
-        User user = userService.getUserFromToken(tokenDTO);
+        User user;
+        try {
+            user = userService.getUserFromToken(tokenDTO);
+        } catch (IllegalArgumentException e) {
+            return new ResponseWrapper<>(401, "Invalid token", null);
+        }
 
         // Obtener rango de fechas para el filtrado
         LocalDate startDate = filterDTO.getStartDate();
@@ -60,11 +72,6 @@ public class TrainingSessionService {
             filterDTO.setEndDate(LocalDate.now());  // Establecer fecha de fin por defecto a la fecha actual
         }
         
-        // Comprobar que la fecha de fin sea posterior o igual a la fecha de inicio
-        if (startDate != null && filterDTO.getEndDate().isBefore(startDate)) {
-            throw new IllegalArgumentException("End date cannot be before the start date.");
-        }
-
         // Convertir la información de filtro a parámetros compatibles con la consulta
         Pageable pageable = PageRequest.of(0, filterDTO.getLimit());  // Usamos limit en la paginación
 
@@ -72,8 +79,11 @@ public class TrainingSessionService {
         Page<TrainingSession> sessionsPage = trainingSessionDAO.findFilteredSessions(user.getId(), startDate, endDate, pageable);
 
         // Convertir las sesiones a DTOs y devolver el resultado
-        return sessionsPage.getContent().stream()
+        List<TrainingSessionDTO> sessionsDTO = sessionsPage.getContent().stream()
                 .map(session -> new TrainingSessionDTO(session))
                 .collect(Collectors.toList());
+
+        return new ResponseWrapper<>(200, "Sessions retrieved successfully.", sessionsDTO);
     }
+
 }

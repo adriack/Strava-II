@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import com.strava.dao.ChallengeDAO;
 import com.strava.dto.ChallengeDTO;
 import com.strava.dto.ChallengeFilterDTO;
+import com.strava.dto.ResponseWrapper;
 import com.strava.dto.TokenDTO;
 import com.strava.entity.Challenge;
 import com.strava.entity.User;
@@ -30,15 +31,13 @@ public class ChallengeService {
     }
 
     // Crear un reto y almacenarlo en la base de datos
-    public String createChallenge(TokenDTO tokenDTO, ChallengeDTO challengeDTO) {
-        User user = userService.getUserFromToken(tokenDTO);
-
-        // Validar que la fecha de fin sea posterior o igual a la fecha de inicio
-        LocalDate startDate = challengeDTO.getStartDate();
-        LocalDate endDate = challengeDTO.getEndDate();
-
-        if (endDate.isBefore(startDate)) {
-            throw new IllegalArgumentException("End date cannot be before start date.");
+    public ResponseWrapper<String> createChallenge(TokenDTO tokenDTO, ChallengeDTO challengeDTO) {
+        // Validar token y obtener el usuario
+        User user;
+        try {
+            user = userService.getUserFromToken(tokenDTO);
+        } catch (IllegalArgumentException e) {
+            return new ResponseWrapper<>(401, "Invalid token", null);
         }
 
         // Crear un nuevo objeto Challenge a partir del DTO
@@ -48,10 +47,10 @@ public class ChallengeService {
         // Guardar el reto en la base de datos
         challengeDAO.save(challenge);
 
-        return "Challenge created successfully with ID: " + challenge.getId();
+        return new ResponseWrapper<>(200, "Challenge created successfully with ID: " + challenge.getId(), null);
     }
 
-    public List<ChallengeDTO> getActiveChallenges(ChallengeFilterDTO challengeFilterDTO) {
+    public ResponseWrapper<List<ChallengeDTO>> getActiveChallenges(ChallengeFilterDTO challengeFilterDTO) {
         LocalDate startDate = challengeFilterDTO.getStartDate();
         LocalDate endDate = challengeFilterDTO.getEndDate();
         SportType sport = challengeFilterDTO.getSport();
@@ -59,11 +58,6 @@ public class ChallengeService {
         // Establecer un límite por defecto de 5 si el valor de limit es null
         if (challengeFilterDTO.getLimit() == null) {
             challengeFilterDTO.setLimit(5);
-        }
-    
-        // Comprobar que endDate es posterior o igual a startDate
-        if (startDate != null && endDate != null && endDate.isBefore(startDate)) {
-            throw new IllegalArgumentException("End date must be greater than or equal to start date.");
         }
     
         Pageable pageable = PageRequest.of(0, challengeFilterDTO.getLimit());
@@ -74,18 +68,31 @@ public class ChallengeService {
         );
     
         // Convertir las entidades de Challenge a DTOs
-        return challengesPage.getContent().stream()
+        List<ChallengeDTO> challenges = challengesPage.getContent().stream()
                 .map(challenge -> new ChallengeDTO(challenge))
                 .collect(Collectors.toList());
+
+        return new ResponseWrapper<>(200, "Active challenges retrieved successfully.", challenges);
     }    
 
     // Aceptar un reto y asociarlo al usuario
-    public String acceptChallenge(TokenDTO tokenDTO, String challengeId) {
-        User user = userService.getUserFromToken(tokenDTO);
+    public ResponseWrapper<String> acceptChallenge(TokenDTO tokenDTO, String challengeId) {
+        // Validar token y obtener el usuario
+        User user;
+        try {
+            user = userService.getUserFromToken(tokenDTO);
+        } catch (IllegalArgumentException e) {
+            return new ResponseWrapper<>(401, "Invalid token", null);
+        }
 
+        // Convertir el ID del reto a UUID y buscar el reto
         UUID challengeUUID = UUID.fromString(challengeId);
         Challenge challenge = challengeDAO.findById(challengeUUID)
-                .orElseThrow(() -> new IllegalArgumentException("Challenge not found."));
+                .orElse(null);
+
+        if (challenge == null) {
+            return new ResponseWrapper<>(404, "Challenge not found.", null);
+        }
 
         // Asociación del reto y el usuario
         challenge.addUser(user);
@@ -93,14 +100,17 @@ public class ChallengeService {
         // Guardar los cambios en la base de datos
         challengeDAO.save(challenge);
 
-        return "Challenge accepted.";
+        return new ResponseWrapper<>(200, "Challenge accepted.", null);
     }
 
     // Obtener todos los retos aceptados por el usuario
-    public List<ChallengeDTO> getAcceptedChallenges(TokenDTO tokenDTO) {
-        User user = userService.getUserFromToken(tokenDTO);
-        if (user == null) {
-            throw new IllegalArgumentException("Invalid token.");
+    public ResponseWrapper<List<ChallengeDTO>> getAcceptedChallenges(TokenDTO tokenDTO) {
+        // Validar token y obtener el usuario
+        User user;
+        try {
+            user = userService.getUserFromToken(tokenDTO);
+        } catch (IllegalArgumentException e) {
+            return new ResponseWrapper<>(401, "Invalid token", null);
         }
 
         // Consultar los retos aceptados desde la base de datos
@@ -110,9 +120,12 @@ public class ChallengeService {
         );
 
         // Convertir las entidades de Challenge a DTOs
-        return challengesPage.getContent().stream()
+        List<ChallengeDTO> challenges = challengesPage.getContent().stream()
                 .map(challenge -> new ChallengeDTO(challenge))
                 .collect(Collectors.toList());
+
+        return new ResponseWrapper<>(200, "Accepted challenges retrieved successfully.", challenges);
     }
-    
+
 }
+

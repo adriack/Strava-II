@@ -1,28 +1,20 @@
 package com.strava.facade;
 
-import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.strava.dto.SessionFilterDTO;
 import com.strava.dto.TokenDTO;
 import com.strava.dto.TrainingSessionDTO;
 import com.strava.service.TrainingSessionService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/sessions")
@@ -37,90 +29,70 @@ public class TrainingSessionController {
     @Operation(summary = "Create a new training session", description = "Creates a new training session for a user.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Session created successfully"),
-        @ApiResponse(responseCode = "400", description = "Bad Request - Invalid data provided"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid token")
+        @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid token"),
+        @ApiResponse(responseCode = "400", description = "Bad Request - Invalid data provided")
     })
     @PostMapping
-    public ResponseEntity<?> createSession(@RequestParam String token, @RequestBody TrainingSessionDTO session) {
-        // Crear un TokenDTO para validación
+    public ResponseEntity<?> createSession(@RequestParam String token, @RequestBody @Valid TrainingSessionDTO session) {
         TokenDTO tokenDTO = new TokenDTO(token);
+        var response = trainingSessionService.createSession(tokenDTO, session);
 
-        try {
-            // Llamar al servicio para crear la sesión, pasando el DTO de la sesión y el token
-            String message = trainingSessionService.createSession(tokenDTO, session);
-            return ResponseEntity.ok(message);
-        } catch (IllegalArgumentException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-
-            // Si el error es "Invalid token", retornamos 401 Unauthorized
-            if (e.getMessage().equals("Invalid token.")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        switch (response.getStatusCode()) {
+            case 200 -> {
+                return ResponseEntity.ok(response.getMessage());
             }
-
-            // Si el error es otro (ej. datos incorrectos)
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            case 401 -> {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response.getMessage());
+            }
+            case 400 -> {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response.getMessage());
+            }
+            default -> {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error during session creation.");
+            }
         }
     }
 
     @Operation(summary = "Get user training sessions", description = "Fetches training sessions for a user with optional date range and limit.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Sessions retrieved successfully"),
-        @ApiResponse(responseCode = "400", description = "Bad Request - Invalid date format"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid token")
+        @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid token"),
+        @ApiResponse(responseCode = "400", description = "Bad Request - Invalid date format or request")
     })
     @GetMapping
     public ResponseEntity<?> getUserSessions(@RequestParam String token,
-                                            @RequestParam(required = false) String startDate,
-                                            @RequestParam(required = false) String endDate,
-                                            @RequestParam(required = false) Integer limit) {
-        // Crear un FilterDTO con las fechas y el límite
+                                             @RequestParam(required = false) String startDate,
+                                             @RequestParam(required = false) String endDate,
+                                             @RequestParam(required = false) Integer limit) {
+        TokenDTO tokenDTO = new TokenDTO(token);
         SessionFilterDTO filterDTO = new SessionFilterDTO();
+
         try {
             filterDTO.setStartDate(startDate != null ? LocalDate.parse(startDate) : null);
             filterDTO.setEndDate(endDate != null ? LocalDate.parse(endDate) : null);
             filterDTO.setLimit(limit);
         } catch (Exception e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Invalid date format.");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid date format.");
         }
-        
-        // Crear un TokenDTO para validación
-        TokenDTO tokenDTO = new TokenDTO(token);
 
-        try {
-            // Obtener sesiones del servicio
-            List<TrainingSessionDTO> sessions = trainingSessionService.getUserSessions(tokenDTO, filterDTO);
-            Map<String, Object> response = new HashMap<>();
-            response.put("sessions", sessions);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
+        var response = trainingSessionService.getUserSessions(tokenDTO, filterDTO);
 
-            // Si el error es "Invalid token", retornamos 401 Unauthorized
-            if (e.getMessage().equals("Invalid token.")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        switch (response.getStatusCode()) {
+            case 200 -> {
+                Map<String, Object> responseMap = new HashMap<>();
+                responseMap.put("sessions", response.getData());
+                responseMap.put("message", response.getMessage());
+                return ResponseEntity.ok(responseMap);
             }
-
-            // Si el error es otro (ej. datos incorrectos)
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            case 401 -> {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response.getMessage());
+            }
+            case 400 -> {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response.getMessage());
+            }
+            default -> {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error during session retrieval.");
+            }
         }
-    }
-
-    // Manejo global de IllegalArgumentException
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException e) {
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", e.getMessage());
-
-        // Si el error es "Invalid token", retornamos 401 Unauthorized
-        if (e.getMessage().equals("Invalid token.")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
-        }
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 }
-

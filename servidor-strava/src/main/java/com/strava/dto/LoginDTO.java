@@ -1,12 +1,24 @@
 package com.strava.dto;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.strava.entity.enumeration.AuthProvider;
 
+import jakarta.validation.constraints.NotNull;
+
 public class LoginDTO {
+    
+    @NotBlank(message = "Email is required.")
+    @Email(message = "Invalid email format.")
     private String email;
+    
+    @NotBlank(message = "Password is required.")
     private String password;
+    
+    @NotNull(message = "AuthProvider is required.")
     private AuthProvider authProvider;
 
     @JsonCreator
@@ -14,19 +26,6 @@ public class LoginDTO {
             @JsonProperty("email") String email,
             @JsonProperty("password") String password,
             @JsonProperty("authProvider") AuthProvider authProvider) {
-
-        if (email == null || email.isEmpty()) {
-            throw new IllegalArgumentException("Email is required.");
-        }
-
-        if (password == null || password.isEmpty()) {
-            throw new IllegalArgumentException("Password is required.");
-        }
-
-        if (authProvider == null) {
-            throw new IllegalArgumentException("AuthProvider is required.");
-        }
-
         this.email = email;
         this.password = password;
         this.authProvider = authProvider;

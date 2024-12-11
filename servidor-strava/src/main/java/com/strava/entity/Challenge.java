@@ -52,7 +52,6 @@ public class Challenge {
 
     // Constructor utilizando ChallengeDTO
     public Challenge(ChallengeDTO challengeDTO) {
-        this.id = challengeDTO.getId();
         this.name = challengeDTO.getName();
         this.startDate = challengeDTO.getStartDate();
         this.endDate = challengeDTO.getEndDate();

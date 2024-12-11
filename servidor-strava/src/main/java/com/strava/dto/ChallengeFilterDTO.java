@@ -4,6 +4,8 @@ import java.time.LocalDate;
 
 import com.strava.entity.enumeration.SportType;
 
+import jakarta.validation.constraints.AssertTrue;
+
 public class ChallengeFilterDTO {
     private LocalDate startDate = null;
     private LocalDate endDate = null;
@@ -41,5 +43,14 @@ public class ChallengeFilterDTO {
 
     public void setLimit(Integer limit) {
         this.limit = limit;
+    }
+
+    // Validación personalizada para asegurarse de que endDate sea posterior o igual a startDate
+    @AssertTrue(message = "End date must be greater than or equal to start date.")
+    public boolean isValidDateRange() {
+        if (startDate != null && endDate != null) {
+            return !endDate.isBefore(startDate);
+        }
+        return true;  // Si no se proporcionan fechas, la validación es válida
     }
 }

@@ -55,7 +55,6 @@ public class TrainingSession {
 
     // Constructor que convierte un DTO en una entidad TrainingSession
     public TrainingSession(TrainingSessionDTO sessionDTO) {
-        this.id = sessionDTO.getId();
         this.title = sessionDTO.getTitle();
         this.sport = sessionDTO.getSport();
         this.distance = sessionDTO.getDistance();

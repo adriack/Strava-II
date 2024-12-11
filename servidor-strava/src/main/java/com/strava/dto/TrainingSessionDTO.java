@@ -2,20 +2,38 @@ package com.strava.dto;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.strava.entity.TrainingSession;
 import com.strava.entity.enumeration.SportType;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
+import jakarta.validation.constraints.Positive;
+
 public class TrainingSessionDTO {
-    private UUID id;
+
+    @NotBlank(message = "Title is required.")
     private String title;
+
+    @NotNull(message = "Sport is required.")
     private SportType sport;
+
+    @NotNull(message = "Distance is required.")
+    @Positive(message = "Distance must be greater than zero.")
     private Double distance;
+
+    @NotNull(message = "Start date is required.")
+    @PastOrPresent(message = "Start date cannot be in the future.")
     private LocalDate startDate;
+
+    @NotNull(message = "Start time is required.")
     private LocalTime startTime;
+
+    @NotNull(message = "Duration is required.")
+    @Positive(message = "Duration must be greater than zero.")
     private Double duration;
 
     @JsonCreator
@@ -27,25 +45,6 @@ public class TrainingSessionDTO {
             @JsonProperty("startTime") LocalTime startTime,
             @JsonProperty("duration") Double duration) {
 
-        if (title == null || title.isEmpty()) {
-            throw new IllegalArgumentException("Title is required.");
-        }
-        if (sport == null) {
-            throw new IllegalArgumentException("Sport is required.");
-        }
-        if (distance == null || distance <= 0) {
-            throw new IllegalArgumentException("Distance must be greater than zero.");
-        }
-        if (startDate == null) {
-            throw new IllegalArgumentException("Start date is required.");
-        }
-        if (startTime == null) {
-            throw new IllegalArgumentException("Start time is required.");
-        }
-        if (duration == null || duration <= 0) {
-            throw new IllegalArgumentException("Duration must be greater than zero.");
-        }
-
         this.title = title;
         this.sport = sport;
         this.distance = distance;
@@ -53,9 +52,8 @@ public class TrainingSessionDTO {
         this.startTime = startTime;
         this.duration = duration;
     }
-    
+
     public TrainingSessionDTO(TrainingSession session) {
-        this.id = session.getId();
         this.title = session.getTitle();
         this.sport = session.getSport();
         this.distance = session.getDistance();
@@ -65,9 +63,6 @@ public class TrainingSessionDTO {
     }
 
     // Getters y Setters
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
 

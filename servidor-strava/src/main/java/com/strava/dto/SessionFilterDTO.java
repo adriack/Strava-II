@@ -2,6 +2,8 @@ package com.strava.dto;
 
 import java.time.LocalDate;
 
+import jakarta.validation.constraints.AssertTrue;
+
 public class SessionFilterDTO {
     private LocalDate startDate = null;
     private LocalDate endDate = null;
@@ -30,5 +32,14 @@ public class SessionFilterDTO {
 
     public void setLimit(Integer limit) {
         this.limit = limit;
+    }
+
+    // Validación personalizada para asegurarse de que endDate sea posterior o igual a startDate
+    @AssertTrue(message = "End date must be greater than or equal to start date.")
+    public boolean isValidDateRange() {
+        if (startDate != null && endDate != null) {
+            return !endDate.isBefore(startDate);
+        }
+        return true;  // Si no se proporcionan fechas, la validación es válida
     }
 }

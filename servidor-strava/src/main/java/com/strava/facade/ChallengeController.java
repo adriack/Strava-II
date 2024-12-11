@@ -1,13 +1,10 @@
 package com.strava.facade;
 
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,8 +13,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 import com.strava.dto.ChallengeDTO;
 import com.strava.dto.ChallengeFilterDTO;
+import com.strava.dto.ResponseWrapper;
 import com.strava.dto.TokenDTO;
 import com.strava.entity.enumeration.SportType;
 import com.strava.service.ChallengeService;
@@ -43,24 +43,11 @@ public class ChallengeController {
         @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid token")
     })
     @PostMapping
-    public ResponseEntity<?> createChallenge(@RequestParam String token, @RequestBody ChallengeDTO challengeDTO) {
+    public ResponseEntity<?> createChallenge(@RequestParam String token, @RequestBody @Valid ChallengeDTO challengeDTO) {
         TokenDTO tokenDTO = new TokenDTO(token);
+        ResponseWrapper<String> response = challengeService.createChallenge(tokenDTO, challengeDTO);
 
-        try {
-            String message = challengeService.createChallenge(tokenDTO, challengeDTO);
-            return ResponseEntity.ok(message);
-        } catch (IllegalArgumentException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-
-            // Si el error es "Invalid token", retornamos 401 Unauthorized
-            if (e.getMessage().equals("Invalid token.")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
-            }
-
-            // Si el error es otro (ej. datos incorrectos)
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        }
+        return ResponseEntity.status(HttpStatus.valueOf(response.getStatusCode())).body(response);
     }
 
     @Operation(summary = "Get active challenges", description = "Fetches active challenges based on filters like date and sport.")
@@ -71,41 +58,26 @@ public class ChallengeController {
     })
     @GetMapping
     public ResponseEntity<?> getActiveChallenges(@RequestParam(required = false) String startDate,
-                                             @RequestParam(required = false) String endDate,
-                                             @RequestParam(required = false) SportType sport,
-                                             @RequestParam(required = false) Integer limit) {
-    ChallengeFilterDTO filterDTO = new ChallengeFilterDTO();
-    try {
-        // Parsear las fechas si se proporcionan
-        if (startDate != null) {
-            filterDTO.setStartDate(LocalDate.parse(startDate));
+                                                  @RequestParam(required = false) String endDate,
+                                                  @RequestParam(required = false) SportType sport,
+                                                  @RequestParam(required = false) Integer limit) {
+        ChallengeFilterDTO filterDTO = new ChallengeFilterDTO();
+        try {
+            if (startDate != null) {
+                filterDTO.setStartDate(LocalDate.parse(startDate));
+            }
+            if (endDate != null) {
+                filterDTO.setEndDate(LocalDate.parse(endDate));
+            }
+            filterDTO.setSport(sport);
+            filterDTO.setLimit(limit);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Invalid date format."));
         }
 
-        if (endDate != null) {
-            filterDTO.setEndDate(LocalDate.parse(endDate));
-        }
-
-        // Asignar el tipo de deporte
-        filterDTO.setSport(sport);
-
-        // Limitar la cantidad de resultados
-        filterDTO.setLimit(limit);
-
-        // Obtener los retos activos filtrados
-        List<ChallengeDTO> challenges = challengeService.getActiveChallenges(filterDTO);
-
-        // Crear la respuesta con los desafíos encontrados
-        Map<String, Object> response = new HashMap<>();
-        response.put("challenges", challenges);
-        return ResponseEntity.ok(response);
-
-    } catch (Exception e) {
-        // Manejo de error en caso de formato de fecha incorrecto
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Invalid date format.");
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        ResponseWrapper<?> response = challengeService.getActiveChallenges(filterDTO);
+        return ResponseEntity.status(HttpStatus.valueOf(response.getStatusCode())).body(response);
     }
-}
 
     @Operation(summary = "Accept a challenge", description = "Accepts a challenge for a user.")
     @ApiResponses(value = {
@@ -115,21 +87,9 @@ public class ChallengeController {
     @PostMapping("/{challengeId}/accept")
     public ResponseEntity<?> acceptChallenge(@PathVariable String challengeId, @RequestParam String token) {
         TokenDTO tokenDTO = new TokenDTO(token);
+        ResponseWrapper<String> response = challengeService.acceptChallenge(tokenDTO, challengeId);
 
-        try {
-            String message = challengeService.acceptChallenge(tokenDTO, challengeId);
-            return ResponseEntity.ok(message);
-        } catch (IllegalArgumentException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-
-            // Si el error es "Invalid token", retornamos 401 Unauthorized
-            if (e.getMessage().equals("Invalid token.")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
-            }
-
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        }
+        return ResponseEntity.status(HttpStatus.valueOf(response.getStatusCode())).body(response);
     }
 
     @Operation(summary = "Get accepted challenges", description = "Fetches challenges accepted by a user.")
@@ -140,37 +100,8 @@ public class ChallengeController {
     @GetMapping("/accepted")
     public ResponseEntity<?> getAcceptedChallenges(@RequestParam String token) {
         TokenDTO tokenDTO = new TokenDTO(token);
+        ResponseWrapper<?> response = challengeService.getAcceptedChallenges(tokenDTO);
 
-        try {
-            List<ChallengeDTO> challenges = challengeService.getAcceptedChallenges(tokenDTO);
-            Map<String, Object> response = new HashMap<>();
-            response.put("challenges", challenges);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-
-            // Si el error es "Invalid token", retornamos 401 Unauthorized
-            if (e.getMessage().equals("Invalid token.")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
-            }
-
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        }
-    }
-
-    // Manejo global de IllegalArgumentException
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException e) {
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", e.getMessage());
-
-        // Si el error es "Invalid token", retornamos 401 Unauthorized
-        if (e.getMessage().equals("Invalid token.")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
-        }
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.valueOf(response.getStatusCode())).body(response);
     }
 }
-
