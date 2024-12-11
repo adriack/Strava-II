@@ -1,24 +1,28 @@
 package com.strava.dto;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.strava.entity.enumeration.AuthProvider;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
+@Schema(description = "DTO for user login information.")
 public class LoginDTO {
-    
+
     @NotBlank(message = "Email is required.")
     @Email(message = "Invalid email format.")
+    @Schema(description = "The user's email address.", example = "user@example.com", required = true)
     private String email;
-    
+
     @NotBlank(message = "Password is required.")
+    @Schema(description = "The user's password.", example = "P@ssw0rd", required = true)
     private String password;
-    
+
     @NotNull(message = "AuthProvider is required.")
+    @Schema(description = "The authentication provider used for login.", example = "GOOGLE", required = true)
     private AuthProvider authProvider;
 
     @JsonCreator

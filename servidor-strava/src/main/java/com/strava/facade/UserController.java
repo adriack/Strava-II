@@ -1,14 +1,20 @@
 package com.strava.facade;
 
-import com.strava.dto.UserDTO;
-import com.strava.dto.LoginDTO;
-import com.strava.dto.TokenDTO;
-import com.strava.service.UserService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.strava.dto.LoginDTO;
+import com.strava.dto.TokenDTO;
+import com.strava.dto.UserDTO;
+import com.strava.service.UserService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -77,7 +83,7 @@ public class UserController {
 
     @Operation(
         summary = "Logout user",
-        description = "Logs out a user and invalidates their JWT token."
+        description = "Logs out a user and invalidates their token."
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "User logged out successfully."),

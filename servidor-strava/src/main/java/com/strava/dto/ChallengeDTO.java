@@ -1,6 +1,7 @@
 package com.strava.dto;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -8,31 +9,42 @@ import com.strava.entity.Challenge;
 import com.strava.entity.enumeration.ObjectiveType;
 import com.strava.entity.enumeration.SportType;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Positive;
 
+@Schema(description = "Represents a challenge with its details.")
 public class ChallengeDTO {
 
+    @Schema(description = "Unique identifier of the challenge.", example = "550e8400-e29b-41d4-a726-446655440000")
+    private UUID id;
+
+    @Schema(description = "Name of the challenge.", example = "Marathon Training")
     @NotBlank(message = "Name is required.")
     private String name;
 
+    @Schema(description = "Start date of the challenge. Must be in the past or present.", example = "2024-01-01")
     @NotNull(message = "Start date is required.")
     @PastOrPresent(message = "Start date cannot be in the future.")
     private LocalDate startDate;
 
+    @Schema(description = "End date of the challenge. Must be after or equal to the start date.", example = "2024-01-31")
     @NotNull(message = "End date is required.")
     private LocalDate endDate;
 
+    @Schema(description = "Objective value for the challenge (e.g., distance in km).", example = "42.2")
     @NotNull(message = "Objective value must be provided.")
     @Positive(message = "Objective value must be greater than zero.")
     private Double objectiveValue;
 
+    @Schema(description = "Type of the objective for the challenge.", example = "DISTANCE")
     @NotNull(message = "Objective type is required.")
     private ObjectiveType objectiveType;
 
+    @Schema(description = "Sport type of the challenge.", example = "RUNNING")
     @NotNull(message = "Sport type is required.")
     private SportType sport;
 
@@ -44,6 +56,7 @@ public class ChallengeDTO {
 
     @JsonCreator
     public ChallengeDTO(
+            @JsonProperty("id") UUID id,
             @JsonProperty("name") String name,
             @JsonProperty("startDate") LocalDate startDate,
             @JsonProperty("endDate") LocalDate endDate,
@@ -51,6 +64,7 @@ public class ChallengeDTO {
             @JsonProperty("objectiveType") ObjectiveType objectiveType,
             @JsonProperty("sport") SportType sport) {
 
+        this.id = id;
         this.name = name;
         this.startDate = startDate;
         this.endDate = endDate;
@@ -59,7 +73,9 @@ public class ChallengeDTO {
         this.sport = sport;
     }
 
+    // Constructor que recibe un Challenge y genera un ChallengeDTO
     public ChallengeDTO(Challenge challenge) {
+        this.id = challenge.getId();  // Usamos el id del Challenge
         this.name = challenge.getName();
         this.startDate = challenge.getStartDate();
         this.endDate = challenge.getEndDate();
@@ -69,6 +85,9 @@ public class ChallengeDTO {
     }
 
     // Getters y Setters
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 

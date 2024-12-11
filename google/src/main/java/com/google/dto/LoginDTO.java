@@ -3,8 +3,15 @@ package com.google.dto;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+
 public class LoginDTO {
+
+    @Schema(description = "The user's email address.", example = "user@gmail.com", required = true)
     private String email;
+
+    @Schema(description = "The user's password.", example = "P@ssw0rd", required = true)
     private String password;
 
     @JsonCreator
