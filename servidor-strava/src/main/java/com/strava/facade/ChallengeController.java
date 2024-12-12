@@ -13,8 +13,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.validation.Valid;
-
 import com.strava.dto.ChallengeDTO;
 import com.strava.dto.ChallengeFilterDTO;
 import com.strava.dto.ResponseWrapper;
@@ -25,6 +23,8 @@ import com.strava.service.ChallengeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/challenges")
@@ -43,6 +43,7 @@ public class ChallengeController {
         @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid token")
     })
     @PostMapping
+    @Transactional
     public ResponseEntity<?> createChallenge(@RequestParam String token, @RequestBody @Valid ChallengeDTO challengeDTO) {
         TokenDTO tokenDTO = new TokenDTO(token);
         ResponseWrapper<String> response = challengeService.createChallenge(tokenDTO, challengeDTO);
@@ -85,6 +86,7 @@ public class ChallengeController {
         @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid token")
     })
     @PostMapping("/{challengeId}/accept")
+    @Transactional
     public ResponseEntity<?> acceptChallenge(@PathVariable String challengeId, @RequestParam String token) {
         TokenDTO tokenDTO = new TokenDTO(token);
         ResponseWrapper<String> response = challengeService.acceptChallenge(tokenDTO, challengeId);

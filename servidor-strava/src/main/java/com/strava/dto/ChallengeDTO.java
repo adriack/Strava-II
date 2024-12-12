@@ -19,7 +19,7 @@ import jakarta.validation.constraints.Positive;
 @Schema(description = "Represents a challenge with its details.")
 public class ChallengeDTO {
 
-    @Schema(description = "Unique identifier of the challenge.", example = "550e8400-e29b-41d4-a726-446655440000")
+    @Schema(description = "Unique identifier of the challenge.", example = "550e8400-e29b-41d4-a726-446655440000", hidden = true)
     private UUID id;
 
     @Schema(description = "Name of the challenge.", example = "Marathon Training")
@@ -40,7 +40,7 @@ public class ChallengeDTO {
     @Positive(message = "Objective value must be greater than zero.")
     private Double objectiveValue;
 
-    @Schema(description = "Type of the objective for the challenge.", example = "DISTANCE")
+    @Schema(description = "Type of the objective for the challenge.", example = "DISTANCIA")
     @NotNull(message = "Objective type is required.")
     private ObjectiveType objectiveType;
 
@@ -49,6 +49,7 @@ public class ChallengeDTO {
     private SportType sport;
 
     // Validación personalizada para comprobar que endDate es posterior o igual a startDate
+    @Schema(hidden = true)
     @AssertTrue(message = "End date must be greater than or equal to start date.")
     public boolean isEndDateAfterStartDate() {
         return endDate == null || startDate == null || !endDate.isBefore(startDate);

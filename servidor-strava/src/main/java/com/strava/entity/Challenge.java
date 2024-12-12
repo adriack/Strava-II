@@ -50,6 +50,9 @@ public class Challenge {
     @ManyToMany(mappedBy = "challenges")  // Relación bidireccional con User
     private List<User> users = new ArrayList<>();  // Listado de usuarios que participan en el reto
 
+    // Constructor vacío para JPA
+    public Challenge() {}
+
     // Constructor utilizando ChallengeDTO
     public Challenge(ChallengeDTO challengeDTO) {
         this.name = challengeDTO.getName();

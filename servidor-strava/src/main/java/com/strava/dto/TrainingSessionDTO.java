@@ -19,7 +19,7 @@ import jakarta.validation.constraints.Positive;
 @Schema(description = "DTO representing a training session.")
 public class TrainingSessionDTO {
 
-    @Schema(description = "ID of the training session.", example = "550e8400-e29b-41d4-a716-446655440000", nullable = true)
+    @Schema(description = "ID of the training session.", example = "550e8400-e29b-41d4-a716-446655440000", nullable = true, hidden = true)
     private UUID id;
 
     @NotBlank(message = "Title is required.")

@@ -35,6 +35,10 @@ public class UserToken {
         this.revoked = false; // Por defecto, el token no está revocado
     }
 
+    public UserToken() {
+        // Constructor vacío requerido por JPA
+    }
+
     // Getters y Setters
     public UUID getId() {
         return id;

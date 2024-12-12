@@ -55,7 +55,7 @@ public class UserController {
 
     @Operation(
         summary = "Login user",
-        description = "Authenticates a user and generates a JWT token. Validates credentials with the selected provider."
+        description = "Authenticates a user and generates a token. Validates credentials with the selected provider."
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "User logged in successfully."),

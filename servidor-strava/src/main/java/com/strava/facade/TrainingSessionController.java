@@ -1,20 +1,28 @@
 package com.strava.facade;
 
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.strava.dto.SessionFilterDTO;
 import com.strava.dto.TokenDTO;
 import com.strava.dto.TrainingSessionDTO;
 import com.strava.service.TrainingSessionService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/sessions")
@@ -33,6 +41,7 @@ public class TrainingSessionController {
         @ApiResponse(responseCode = "400", description = "Bad Request - Invalid data provided")
     })
     @PostMapping
+    @Transactional
     public ResponseEntity<?> createSession(@RequestParam String token, @RequestBody @Valid TrainingSessionDTO session) {
         TokenDTO tokenDTO = new TokenDTO(token);
         var response = trainingSessionService.createSession(tokenDTO, session);
