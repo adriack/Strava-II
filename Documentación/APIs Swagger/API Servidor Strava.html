@@ -547,7 +547,7 @@
     <a class="up" href="#__Methods">Up</a>
     <pre class="post"><code class="huge"><span class="http-method">post</span> /users/login</code></pre></div>
     <div class="method-summary">Login user (<span class="nickname">loginUser</span>)</div>
-    <div class="method-notes">Authenticates a user and generates a JWT token. Validates credentials with the selected provider.</div>
+    <div class="method-notes">Authenticates a user and generates a token. Validates credentials with the selected provider.</div>
 
 
     <h3 class="field-label">Consumes</h3>
@@ -731,9 +731,7 @@
     <h3><a name="ChallengeDTO"><code>ChallengeDTO</code></a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'>Represents a challenge with its details.</div>
     <div class="field-items">
-      <div class="param">id (optional)</div><div class="param-desc"><span class="param-type"><a href="#UUID">UUID</a></span> Unique identifier of the challenge. format: uuid</div>
-          <div class="param-desc"><span class="param-type">example: 550e8400-e29b-41d4-a726-446655440000</span></div>
-<div class="param">name </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Name of the challenge. </div>
+      <div class="param">name </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Name of the challenge. </div>
           <div class="param-desc"><span class="param-type">example: Marathon Training</span></div>
 <div class="param">startDate </div><div class="param-desc"><span class="param-type"><a href="#date">date</a></span> Start date of the challenge. Must be in the past or present. format: date</div>
           <div class="param-desc"><span class="param-type">example: Mon Jan 01 00:00:00 GMT 2024</span></div>
@@ -744,12 +742,11 @@
 <div class="param">objectiveType </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Type of the objective for the challenge. </div>
         <div class="param-enum-header">Enum:</div>
         <div class="param-enum">TIEMPO</div><div class="param-enum">DISTANCIA</div>
-          <div class="param-desc"><span class="param-type">example: DISTANCE</span></div>
+          <div class="param-desc"><span class="param-type">example: DISTANCIA</span></div>
 <div class="param">sport </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Sport type of the challenge. </div>
         <div class="param-enum-header">Enum:</div>
         <div class="param-enum">RUNNING</div><div class="param-enum">CICLISMO</div>
           <div class="param-desc"><span class="param-type">example: RUNNING</span></div>
-<div class="param">endDateAfterStartDate (optional)</div><div class="param-desc"><span class="param-type"><a href="#boolean">Boolean</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -770,10 +767,6 @@
           <div class="param-desc"><span class="param-type">example: user@example.com</span></div>
 <div class="param">password </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The user&#x27;s password. </div>
           <div class="param-desc"><span class="param-type">example: P@ssw0rd</span></div>
-<div class="param">authProvider </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> The authentication provider used for login. </div>
-        <div class="param-enum-header">Enum:</div>
-        <div class="param-enum">GOOGLE</div><div class="param-enum">META</div>
-          <div class="param-desc"><span class="param-type">example: GOOGLE</span></div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
@@ -788,9 +781,7 @@
     <h3><a name="TrainingSessionDTO"><code>TrainingSessionDTO</code></a> <a class="up" href="#__Models">Up</a></h3>
     <div class='model-description'>DTO representing a training session.</div>
     <div class="field-items">
-      <div class="param">id (optional)</div><div class="param-desc"><span class="param-type"><a href="#UUID">UUID</a></span> ID of the training session. format: uuid</div>
-          <div class="param-desc"><span class="param-type">example: 550e8400-e29b-41d4-a716-446655440000</span></div>
-<div class="param">title </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Title of the training session. </div>
+      <div class="param">title </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Title of the training session. </div>
           <div class="param-desc"><span class="param-type">example: Morning Run</span></div>
 <div class="param">sport </div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Type of sport for the session. </div>
         <div class="param-enum-header">Enum:</div>

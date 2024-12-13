@@ -37,7 +37,7 @@ public class UserService {
             return new ResponseWrapper<>(400, "This email already exists.", null);
         }
 
-        AuthGateway authGateway = factoriaGateway.createGateway(userDTO.getAuthProvider().toString());
+        AuthGateway authGateway = factoriaGateway.createGateway(userDTO.getAuthProvider());
 
         Optional<Boolean> emailValidOptional = authGateway.validateEmail(userDTO.getEmail());
         if (emailValidOptional.isEmpty()) {
@@ -67,9 +67,18 @@ public class UserService {
     public ResponseWrapper<String> loginUser(LoginDTO loginDTO) {
         String email = loginDTO.getEmail();
         String password = loginDTO.getPassword();
-        String authProvider = loginDTO.getAuthProvider().toString();
 
-        AuthGateway authGateway = factoriaGateway.createGateway(authProvider);
+        // Obtiene el usuario de la base de datos por su email
+        Optional<User> optionalUser = userDAO.findByEmail(email);
+
+        if (optionalUser.isEmpty()) {
+            return new ResponseWrapper<>(400, "User must be registered first.", null);
+        }
+
+        User user = optionalUser.get();
+
+        // Valida las credenciales de usuario con el proveedor correspondiente
+        AuthGateway authGateway = factoriaGateway.createGateway(user.getAuthProvider());
 
         Optional<Boolean> credentialsValidOptional = authGateway.validatePassword(email, password);
         if (credentialsValidOptional.isEmpty()) {
@@ -80,14 +89,7 @@ public class UserService {
             return new ResponseWrapper<>(401, "Invalid credentials.", null);
         }
 
-        Optional<User> optionalUser = userDAO.findByEmail(email);
-
-        if (optionalUser.isEmpty()) {
-            return new ResponseWrapper<>(400, "User must be registered first.", null);
-        }
-
-        User user = optionalUser.get();
-
+        // Genera un token de usuario y lo almacena en la base de datos
         String token = generateToken();
         UserToken userToken = new UserToken(user, token);
         tokenDAO.save(userToken);
